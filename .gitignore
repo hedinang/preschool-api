@@ -7,3 +7,6 @@ target/
 .settings/
 .DS_Store
 Thumbs.db
+maven.yml
+mvnw
+mvnw.cmd
