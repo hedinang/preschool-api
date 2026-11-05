@@ -1,5 +1,6 @@
 package org.example.preschool.controller;
 
+import org.example.preschool.controller.free.HealthController;
 import org.example.preschool.configuration.WebSecurityConfig;
 import org.example.preschool.repository.UserRepository;
 import org.example.preschool.util.jwt.JwtTokenProvider;

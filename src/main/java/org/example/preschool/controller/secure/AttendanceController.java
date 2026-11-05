@@ -1,19 +1,20 @@
-package org.example.preschool.controller;
+package org.example.preschool.controller.secure;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.preschool.model.dto.CustomUserDetails;
 import org.example.preschool.model.entity.AttendanceRecord;
 import org.example.preschool.model.request.AttendanceBatchRequest;
+import org.example.preschool.model.request.ListRequest;
 import org.example.preschool.service.PreschoolService;
 import org.example.preschool.util.response.BaseResponse;
 import org.example.preschool.util.response.Response;
+import org.example.preschool.util.SequencePagination;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
@@ -26,16 +27,21 @@ public class AttendanceController {
 
     private final PreschoolService preschoolService;
 
-    @GetMapping
+    @PostMapping("/list")
     public BaseResponse<List<AttendanceRecord>> getAttendance(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false) LocalDate date,
-            @RequestParam(required = false) String classroom
+            @RequestBody(required = false) ListRequest request
     ) {
-        return Response.toData(preschoolService.getAttendance(
-                userDetails.getUser(),
-                date == null ? LocalDate.now() : date,
-                classroom
+        ListRequest listRequest = request == null ? new ListRequest() : request;
+        return Response.toData(SequencePagination.apply(
+                preschoolService.getAttendance(
+                        userDetails.getUser(),
+                        listRequest.getDate() == null ? LocalDate.now() : listRequest.getDate(),
+                        listRequest.getClassroom()
+                ),
+                listRequest.getSequence(),
+                listRequest.effectiveLimit(),
+                listRequest.effectiveDirection()
         ));
     }
 

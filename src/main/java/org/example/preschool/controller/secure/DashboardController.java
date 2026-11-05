@@ -1,4 +1,4 @@
-package org.example.preschool.controller;
+package org.example.preschool.controller.secure;
 
 import lombok.RequiredArgsConstructor;
 import org.example.preschool.model.dto.CustomUserDetails;

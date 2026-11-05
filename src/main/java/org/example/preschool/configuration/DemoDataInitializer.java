@@ -31,6 +31,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,14 +49,7 @@ public class DemoDataInitializer implements ApplicationRunner {
             new ClassroomSeed("Lá 1", "5 – 6 tuổi", 20, "Ngọc Lan", "07:30 – 16:30", "🍃", "class-blue"),
             new ClassroomSeed("Lá 2", "5 – 6 tuổi", 20, "Thanh Vân", "07:30 – 16:30", "🌻", "class-yellow")
     );
-    private static final List<StudentSeed> STUDENTS = List.of(
-            new StudentSeed("Nguyễn Minh Khôi", "Nam", 4, "Mầm 1", "Chị Ngọc Anh", "0912 345 678", "Đã đến", "MK", "peach", "07:42"),
-            new StudentSeed("Trần Bảo Ngọc", "Nữ", 3, "Chồi 2", "Anh Tuấn Minh", "0987 123 456", "Đã đến", "BN", "lilac", "07:56"),
-            new StudentSeed("Lê Gia Hân", "Nữ", 5, "Lá 1", "Chị Thanh Hà", "0903 456 789", "Đã đến", "GH", "mint", "08:02"),
-            new StudentSeed("Phạm Đức Anh", "Nam", 4, "Mầm 2", "Anh Hoàng Nam", "0934 567 890", "Đã đến", "ĐA", "blue", "07:38"),
-            new StudentSeed("Vũ Khánh Linh", "Nữ", 3, "Chồi 1", "Chị Mỹ Linh", "0978 234 567", "Xin nghỉ", "KL", "yellow", ""),
-            new StudentSeed("Đỗ Nhật Nam", "Nam", 5, "Lá 2", "Anh Nhật Quang", "0918 765 432", "Đã đến", "NN", "pink", "07:48")
-    );
+    private static final List<StudentSeed> STUDENTS = createStudentSeeds();
     private static final List<TeacherSeed> TEACHERS = List.of(
             new TeacherSeed("Mai Phương", "Giáo viên chủ nhiệm", "Mầm 1", "0901 234 567", "maiphuong@annhien.vn", "6 năm", "MP", "mint"),
             new TeacherSeed("Thu Hằng", "Giáo viên chủ nhiệm", "Mầm 2", "0902 345 678", "thuhang@annhien.vn", "5 năm", "TH", "peach"),
@@ -81,6 +75,34 @@ public class DemoDataInitializer implements ApplicationRunner {
             {"care", "learn", "play", "care", "learn", "care", "art", "play"},
             {"care", "learn", "play", "care", "learn", "care", "art", "play"}
     };
+
+    private static List<StudentSeed> createStudentSeeds() {
+        List<StudentSeed> seeds = new ArrayList<>(List.of(
+                new StudentSeed("Nguyễn Minh Khôi", "Nam", 4, "Mầm 1", "Chị Ngọc Anh", "0912 345 678", "Đã đến", "MK", "peach", "07:42"),
+                new StudentSeed("Trần Bảo Ngọc", "Nữ", 3, "Chồi 2", "Anh Tuấn Minh", "0987 123 456", "Đã đến", "BN", "lilac", "07:56"),
+                new StudentSeed("Lê Gia Hân", "Nữ", 5, "Lá 1", "Chị Thanh Hà", "0903 456 789", "Đã đến", "GH", "mint", "08:02"),
+                new StudentSeed("Phạm Đức Anh", "Nam", 4, "Mầm 2", "Anh Hoàng Nam", "0934 567 890", "Đã đến", "ĐA", "blue", "07:38"),
+                new StudentSeed("Vũ Khánh Linh", "Nữ", 3, "Chồi 1", "Chị Mỹ Linh", "0978 234 567", "Xin nghỉ", "KL", "yellow", ""),
+                new StudentSeed("Đỗ Nhật Nam", "Nam", 5, "Lá 2", "Anh Nhật Quang", "0918 765 432", "Đã đến", "NN", "pink", "07:48")
+        ));
+        String[] classrooms = CLASSROOMS.stream().map(ClassroomSeed::name).toArray(String[]::new);
+        for (int index = 1; index <= 54; index++) {
+            String suffix = String.format("%02d", index);
+            seeds.add(new StudentSeed(
+                    "Học sinh demo " + suffix,
+                    index % 2 == 0 ? "Nữ" : "Nam",
+                    3 + index % 3,
+                    classrooms[(index - 1) % classrooms.length],
+                    "Phụ huynh demo " + suffix,
+                    String.format("091%1d %03d %03d", index % 10, 100 + index, 200 + index),
+                    index % 7 == 0 ? "Xin nghỉ" : "Đã đến",
+                    "HS" + suffix,
+                    new String[]{"peach", "lilac", "mint", "blue", "yellow", "pink"}[(index - 1) % 6],
+                    index % 7 == 0 ? "" : String.format("07:%02d", 30 + index % 30)
+            ));
+        }
+        return List.copyOf(seeds);
+    }
 
     private final StudentRepository studentRepository;
     private final TeacherRepository teacherRepository;
@@ -163,16 +185,28 @@ public class DemoDataInitializer implements ApplicationRunner {
     }
 
     private void seedTeachers(String timestamp) {
-        Set<String> existingClassrooms = new HashSet<>();
         Set<String> existingEmails = new HashSet<>();
         for (Teacher teacher : teacherRepository.findAll()) {
-            existingClassrooms.add(teacher.getClassroom());
             if (teacher.getEmail() != null) {
                 existingEmails.add(teacher.getEmail().toLowerCase());
             }
         }
-        for (TeacherSeed seed : TEACHERS) {
-            if (existingEmails.contains(seed.email().toLowerCase()) || !existingClassrooms.add(seed.classroom())) {
+        List<TeacherSeed> allTeacherSeeds = new ArrayList<>(TEACHERS);
+        for (int index = 1; index <= 18; index++) {
+            String suffix = String.format("%02d", index);
+            allTeacherSeeds.add(new TeacherSeed(
+                    "Giáo viên demo " + suffix,
+                    index % 3 == 0 ? "Giáo viên bộ môn" : "Trợ giảng",
+                    CLASSROOMS.get((index - 1) % CLASSROOMS.size()).name(),
+                    String.format("092%1d %03d %03d", index % 10, 300 + index, 400 + index),
+                    "giaovien.demo." + suffix + "@annhien.vn",
+                    (2 + index % 9) + " năm",
+                    "GV" + suffix,
+                    new String[]{"mint", "peach", "lilac", "pink", "yellow", "blue"}[(index - 1) % 6]
+            ));
+        }
+        for (TeacherSeed seed : allTeacherSeeds) {
+            if (existingEmails.contains(seed.email().toLowerCase())) {
                 continue;
             }
             Teacher teacher = new Teacher();
@@ -286,8 +320,7 @@ public class DemoDataInitializer implements ApplicationRunner {
         for (AttendanceRecord record : attendanceRepository.findByDate(today)) {
             existing.add(record.getStudentId());
         }
-        for (StudentSeed seed : STUDENTS) {
-            Student student = students.get(seed.name());
+        for (Student student : students.values()) {
             if (student == null || !existing.add(student.getId())) {
                 continue;
             }
@@ -297,8 +330,10 @@ public class DemoDataInitializer implements ApplicationRunner {
             record.setStudentId(student.getId());
             record.setStudentName(student.getName());
             record.setClassroom(student.getClassroom());
-            record.setStatus(seed.status());
-            record.setCheckInTime(seed.checkInTime().isBlank() ? "—" : seed.checkInTime());
+            record.setStatus(student.getStatus());
+            record.setCheckInTime("Đã đến".equals(student.getStatus())
+                    ? String.format("07:%02d", 30 + existing.size() % 30)
+                    : "—");
             setTimestamps(record, timestamp);
             attendanceRepository.save(record);
         }
@@ -312,18 +347,25 @@ public class DemoDataInitializer implements ApplicationRunner {
         for (TuitionInvoice invoice : tuitionInvoiceRepository.findAll()) {
             existing.add(invoice.getStudentId() + "|" + invoice.getMonth());
         }
-        List<InvoiceSeed> seeds = List.of(
+        List<InvoiceSeed> initialSeeds = List.of(
                 new InvoiceSeed("Nguyễn Minh Khôi", new BigDecimal("3500000"), "Đã thanh toán"),
                 new InvoiceSeed("Trần Bảo Ngọc", new BigDecimal("3800000"), "Chờ thanh toán"),
                 new InvoiceSeed("Lê Gia Hân", new BigDecimal("4000000"), "Đã thanh toán"),
                 new InvoiceSeed("Phạm Đức Anh", new BigDecimal("3500000"), "Quá hạn"),
                 new InvoiceSeed("Vũ Khánh Linh", new BigDecimal("3800000"), "Chờ thanh toán")
         );
-        for (InvoiceSeed seed : seeds) {
-            Student student = students.get(seed.studentName());
+        for (Student student : students.values()) {
             if (student == null || !existing.add(student.getId() + "|" + month)) {
                 continue;
             }
+            InvoiceSeed seed = initialSeeds.stream()
+                    .filter(item -> item.studentName().equals(student.getName()))
+                    .findFirst()
+                    .orElse(new InvoiceSeed(
+                            student.getName(),
+                            BigDecimal.valueOf(3_200_000L + student.getAge() * 100_000L),
+                            "Đã thanh toán".equals(student.getStatus()) ? "Đã thanh toán" : "Chờ thanh toán"
+                    ));
             TuitionInvoice invoice = new TuitionInvoice();
             invoice.setId(StringUtil.generateId());
             invoice.setStudentId(student.getId());
@@ -345,7 +387,7 @@ public class DemoDataInitializer implements ApplicationRunner {
         for (SchoolMessage message : schoolMessageRepository.findAll()) {
             existingTitles.add(message.getTitle());
         }
-        List<MessageSeed> seeds = List.of(
+        List<MessageSeed> seeds = new ArrayList<>(List.of(
                 new MessageSeed(
                         "Lịch hoạt động ngoài trời tuần này",
                         "Các bé sẽ tham gia hoạt động khám phá thiên nhiên vào sáng thứ Sáu. Ba mẹ nhớ chuẩn bị nón và bình nước cho bé nhé!",
@@ -361,7 +403,18 @@ public class DemoDataInitializer implements ApplicationRunner {
                         "Thực đơn tuần mới đã được cập nhật. Ba mẹ có thể xem chi tiết bữa ăn của các bé tại bảng tin lớp.",
                         "Tất cả phụ huynh", "THỰC ĐƠN", "🥗", "mint", 2
                 )
-        );
+        ));
+        for (int index = 1; index <= 24; index++) {
+            seeds.add(new MessageSeed(
+                    "Thông báo demo " + String.format("%02d", index),
+                    "Nội dung thông báo mẫu số " + index + " từ Trường Mầm non An Nhiên.",
+                    "Tất cả phụ huynh",
+                    index % 2 == 0 ? "HOẠT ĐỘNG" : "NHÀ TRƯỜNG",
+                    "AN",
+                    index % 2 == 0 ? "mint" : "peach",
+                    index
+            ));
+        }
         LocalDateTime now = LocalDateTime.now();
         for (MessageSeed seed : seeds) {
             if (!existingTitles.add(seed.title())) {

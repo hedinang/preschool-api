@@ -1,41 +1,47 @@
-package org.example.preschool.controller;
+package org.example.preschool.controller.secure;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.preschool.model.dto.CustomUserDetails;
 import org.example.preschool.model.entity.Student;
+import org.example.preschool.model.request.ListRequest;
 import org.example.preschool.service.PreschoolService;
 import org.example.preschool.util.response.BaseResponse;
+import org.example.preschool.util.SequencePagination;
 import org.example.preschool.util.response.Response;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/api/student")
 public class StudentController {
 
     private final PreschoolService preschoolService;
 
-    @GetMapping("/students")
+    @PostMapping("/list")
     public BaseResponse<List<Student>> getStudents(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false) String classroom
+            @RequestBody(required = false) ListRequest request
     ) {
-        return Response.toData(preschoolService.getStudents(userDetails.getUser(), classroom));
+        ListRequest listRequest = request == null ? new ListRequest() : request;
+        return Response.toData(SequencePagination.apply(
+                preschoolService.getStudents(userDetails.getUser(), listRequest.getClassroom()),
+                listRequest.getSequence(),
+                listRequest.effectiveLimit(),
+                listRequest.effectiveDirection()
+        ));
     }
 
-    @GetMapping("/students/{id}")
+    @org.springframework.web.bind.annotation.GetMapping("/{id}")
     public BaseResponse<Student> getStudent(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String id
@@ -43,7 +49,7 @@ public class StudentController {
         return Response.toData(preschoolService.getStudent(userDetails.getUser(), id));
     }
 
-    @PostMapping("/students")
+    @PostMapping
     public BaseResponse<Student> createStudent(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody Student student
@@ -51,7 +57,7 @@ public class StudentController {
         return Response.toData(preschoolService.createStudent(userDetails.getUser(), student));
     }
 
-    @PutMapping("/students/{id}")
+    @PutMapping("/{id}")
     public BaseResponse<Student> updateStudent(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String id,
@@ -60,7 +66,7 @@ public class StudentController {
         return Response.toData(preschoolService.updateStudent(userDetails.getUser(), id, student));
     }
 
-    @DeleteMapping("/students/{id}")
+    @DeleteMapping("/{id}")
     public BaseResponse<Void> deleteStudent(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String id
@@ -69,8 +75,4 @@ public class StudentController {
         return Response.toData(null);
     }
 
-    @GetMapping("/parents")
-    public BaseResponse<?> getParents(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        return Response.toData(preschoolService.getParents(userDetails.getUser()));
-    }
 }

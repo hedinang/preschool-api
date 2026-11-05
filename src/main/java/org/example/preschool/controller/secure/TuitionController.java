@@ -1,14 +1,15 @@
-package org.example.preschool.controller;
+package org.example.preschool.controller.secure;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.preschool.model.dto.CustomUserDetails;
 import org.example.preschool.model.entity.TuitionInvoice;
+import org.example.preschool.model.request.ListRequest;
 import org.example.preschool.service.PreschoolService;
 import org.example.preschool.util.response.BaseResponse;
 import org.example.preschool.util.response.Response;
+import org.example.preschool.util.SequencePagination;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -26,13 +27,20 @@ public class TuitionController {
 
     private final PreschoolService preschoolService;
 
-    @GetMapping
+    @PostMapping("/list")
     public BaseResponse<List<TuitionInvoice>> getInvoices(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestParam(required = false) String month,
-            @RequestParam(required = false) String classroom
+            @RequestBody(required = false) ListRequest request
     ) {
-        return Response.toData(preschoolService.getTuition(userDetails.getUser(), month, classroom));
+        ListRequest listRequest = request == null ? new ListRequest() : request;
+        return Response.toData(SequencePagination.apply(
+                preschoolService.getTuition(
+                        userDetails.getUser(), listRequest.getMonth(), listRequest.getClassroom()
+                ),
+                listRequest.getSequence(),
+                listRequest.effectiveLimit(),
+                listRequest.effectiveDirection()
+        ));
     }
 
     @PostMapping

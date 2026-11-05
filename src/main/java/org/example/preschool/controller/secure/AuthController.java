@@ -1,18 +1,14 @@
-package org.example.preschool.controller;
+package org.example.preschool.controller.secure;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.preschool.model.dto.AuthResponse;
 import org.example.preschool.model.dto.CustomUserDetails;
 import org.example.preschool.model.dto.UserProfileResponse;
-import org.example.preschool.model.request.LoginRequest;
 import org.example.preschool.service.AuthService;
 import org.example.preschool.util.response.BaseResponse;
 import org.example.preschool.util.response.Response;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,11 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
-
-    @PostMapping("/login")
-    public BaseResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return Response.toData(authService.login(request));
-    }
 
     @GetMapping("/me")
     public BaseResponse<UserProfileResponse> getProfile(

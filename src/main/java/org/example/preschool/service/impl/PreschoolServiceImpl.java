@@ -84,6 +84,11 @@ public class PreschoolServiceImpl implements PreschoolService {
                 .map(entry -> new ParentSummary(
                         entry.getKey(),
                         entry.getValue().stream().map(Student::getPhone).filter(StringUtils::hasText).findFirst().orElse(""),
+                        entry.getValue().stream()
+                                .map(Student::getSequence)
+                                .filter(Objects::nonNull)
+                                .max(Long::compareTo)
+                                .orElse(0L),
                         entry.getValue()
                 ))
                 .toList();

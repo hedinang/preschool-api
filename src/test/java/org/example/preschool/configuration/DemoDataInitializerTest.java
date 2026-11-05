@@ -89,23 +89,23 @@ class DemoDataInitializerTest {
         DefaultApplicationArguments arguments = new DefaultApplicationArguments(new String[0]);
 
         initializer.run(arguments);
-        assertEquals(6, students.size());
-        assertEquals(6, teachers.size());
+        assertEquals(60, students.size());
+        assertEquals(24, teachers.size());
         assertEquals(6, classrooms.size());
         assertEquals(240, schedules.size());
-        assertEquals(6, attendance.size());
-        assertEquals(5, invoices.size());
-        assertEquals(3, messages.size());
+        assertEquals(60, attendance.size());
+        assertEquals(60, invoices.size());
+        assertEquals(27, messages.size());
         assertEquals(4, users.size());
 
         initializer.run(arguments);
-        assertEquals(6, students.size());
-        assertEquals(6, teachers.size());
+        assertEquals(60, students.size());
+        assertEquals(24, teachers.size());
         assertEquals(6, classrooms.size());
         assertEquals(240, schedules.size());
-        assertEquals(6, attendance.size());
-        assertEquals(5, invoices.size());
-        assertEquals(3, messages.size());
+        assertEquals(60, attendance.size());
+        assertEquals(60, invoices.size());
+        assertEquals(27, messages.size());
         assertEquals(4, users.size());
         assertTrue(users.stream().anyMatch(user ->
                 user.getUsername().equals("admin@annhien.vn")

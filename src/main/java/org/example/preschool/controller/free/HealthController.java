@@ -1,4 +1,4 @@
-package org.example.preschool.controller;
+package org.example.preschool.controller.free;
 
 import java.util.Map;
 
