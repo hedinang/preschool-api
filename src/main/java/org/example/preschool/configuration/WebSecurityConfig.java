@@ -47,6 +47,8 @@ public class WebSecurityConfig {
                 "http://localhost:80",
                 "https://localhost:4003",
                 "http://localhost:3000",
+                "http://localhost:4173",
+                "http://localhost:5173",
                 "http://localhost:8000",
                 "http://localhost:8300",
                 "http://10.1.1.230",

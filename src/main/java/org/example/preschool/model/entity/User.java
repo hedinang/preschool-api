@@ -29,6 +29,20 @@ public class User extends BaseEntity {
 
     private RoleType role;
 
+    @Field(name = "display_name")
+    private String displayName;
+
+    private String title;
+
+    private String classroom;
+
+    @Field(name = "student_id")
+    private String studentId;
+
+    private String avatar;
+
+    private String color;
+
     @Field(name = "access_token")
     private String accessToken;
 }
