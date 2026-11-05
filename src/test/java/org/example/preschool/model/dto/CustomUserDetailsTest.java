@@ -26,4 +26,13 @@ class CustomUserDetailsTest {
 
         assertFalse(new CustomUserDetails(user).isEnabled());
     }
+
+    @Test
+    void disablesStudentAccounts() {
+        User user = new User();
+        user.setRole(RoleType.STUDENT);
+        user.setStatus("ACTIVE");
+
+        assertFalse(new CustomUserDetails(user).isEnabled());
+    }
 }

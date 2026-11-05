@@ -230,8 +230,7 @@ public class DemoDataInitializer implements ApplicationRunner {
         List<UserSeed> seeds = List.of(
                 new UserSeed("admin@annhien.vn", "Lan Anh", RoleType.ADMIN, "Quản trị viên", null, null, "LA", "peach"),
                 new UserSeed("maiphuong@annhien.vn", "Cô Mai Phương", RoleType.TEACHER, "Giáo viên · Mầm 1", "Mầm 1", null, "MP", "mint"),
-                new UserSeed("ngocanh@annhien.vn", "Chị Ngọc Anh", RoleType.PARENT, "Phụ huynh", null, "Nguyễn Minh Khôi", "NA", "lilac"),
-                new UserSeed("minhkhoi@annhien.vn", "Nguyễn Minh Khôi", RoleType.STUDENT, "Học sinh · Mầm 1", "Mầm 1", "Nguyễn Minh Khôi", "MK", "peach")
+                new UserSeed("ngocanh@annhien.vn", "Chị Ngọc Anh", RoleType.PARENT, "Phụ huynh", null, "Nguyễn Minh Khôi", "NA", "lilac")
         );
         for (User user : userRepository.findAll()) {
             if (user.getUsername() != null) {

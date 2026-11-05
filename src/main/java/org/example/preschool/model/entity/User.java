@@ -36,6 +36,15 @@ public class User extends BaseEntity {
 
     private String classroom;
 
+    private String phone;
+
+    @Field(name = "phone2")
+    private String phone2;
+
+    private String address;
+
+    private String gender;
+
     @Field(name = "student_id")
     private String studentId;
 

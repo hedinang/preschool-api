@@ -61,7 +61,27 @@ using a production database. Existing records are not overwritten.
 All responses use the existing `{ "status", "message", "data" }` envelope.
 Requests other than health and login require a bearer token. Administrators
 manage school records, teachers are scoped to their assigned classroom, and
-parent/student accounts can access linked children.
+parents can access children linked to their accounts.
+
+Administrators can list login accounts with `POST /api/user/list`; its body
+accepts `sequence`, `limit`, `direction`, optional `role` and `search` filters.
+Accounts are fetched when the management page opens and fetched again when the
+role filter changes. Use `POST /api/user`, `PUT /api/user/{id}`, and
+`DELETE /api/user/{id}` to create, update, and disable accounts. Supported
+managed roles are `ADMIN`, `TEACHER`, and `PARENT`; deletion marks accounts
+`DELETED`. User profiles include two optional phone numbers, permanent address,
+and gender. A user's two phone numbers must differ, and phone number 1 must be
+unique among active accounts of the same role; it may be shared across roles.
+Student accounts cannot log in.
+
+Parents can declare a child with `POST /api/student`; the API links the child
+to the authenticated parent and leaves classroom assignment to the school.
+Administrators can search parent accounts through the `role` and `search`
+filters on `POST /api/user/list`, then link a student by its `parentUserId`.
+The API resolves the selected active parent account and fills the linked parent
+name and email. Administrators and teachers can list students, and teachers can
+update records within their assigned classroom. Only administrators can delete
+student records; deletion marks the record `DELETED`.
 
 | Screen/data | Endpoint | Main operations |
 |---|---|---|
@@ -77,8 +97,8 @@ parent/student accounts can access linked children.
 
 Student fields correspond to the web portal (`name`, `gender`, `age`,
 `classroom`, `parent`, `phone`, `status`, `avatar`, `color`). Link parent
-accounts with `parentUserId` or `parentEmail`; link student accounts with the
-user's `studentId`, and teacher accounts with their `classroom`.
+accounts with `parentUserId` or `parentEmail`, and teacher accounts with their
+`classroom`.
 
 ## Source layout
 

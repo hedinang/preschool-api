@@ -30,7 +30,6 @@ public class Student extends BaseEntity {
     @Max(10)
     private int age;
 
-    @NotBlank
     @Indexed
     private String classroom;
 

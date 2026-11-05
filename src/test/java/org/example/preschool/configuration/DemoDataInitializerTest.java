@@ -96,7 +96,7 @@ class DemoDataInitializerTest {
         assertEquals(60, attendance.size());
         assertEquals(60, invoices.size());
         assertEquals(27, messages.size());
-        assertEquals(4, users.size());
+        assertEquals(3, users.size());
 
         initializer.run(arguments);
         assertEquals(60, students.size());
@@ -106,7 +106,8 @@ class DemoDataInitializerTest {
         assertEquals(60, attendance.size());
         assertEquals(60, invoices.size());
         assertEquals(27, messages.size());
-        assertEquals(4, users.size());
+        assertEquals(3, users.size());
+        assertTrue(users.stream().noneMatch(user -> user.getRole() == RoleType.STUDENT));
         assertTrue(users.stream().anyMatch(user ->
                 user.getUsername().equals("admin@annhien.vn")
                         && user.getRole() == RoleType.ADMIN

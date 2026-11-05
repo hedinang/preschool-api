@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.preschool.util.constant.RoleType;
 
 import java.time.LocalDate;
 
@@ -21,6 +22,8 @@ public class ListRequest {
 
     private String direction = "desc";
     private String classroom;
+    private RoleType role;
+    private String search;
     private String month;
     private LocalDate date;
 

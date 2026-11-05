@@ -20,8 +20,10 @@ import org.example.preschool.repository.SchoolMessageRepository;
 import org.example.preschool.repository.StudentRepository;
 import org.example.preschool.repository.TeacherRepository;
 import org.example.preschool.repository.TuitionInvoiceRepository;
+import org.example.preschool.repository.UserRepository;
 import org.example.preschool.service.PreschoolService;
 import org.example.preschool.util.constant.ErrorCode;
+import org.example.preschool.util.constant.EntityStatus;
 import org.example.preschool.util.constant.RoleType;
 import org.example.preschool.util.exception.ServiceException;
 import org.example.preschool.util.StringUtil;
@@ -56,10 +58,12 @@ public class PreschoolServiceImpl implements PreschoolService {
     private final AttendanceRepository attendanceRepository;
     private final TuitionInvoiceRepository tuitionInvoiceRepository;
     private final SchoolMessageRepository schoolMessageRepository;
+    private final UserRepository userRepository;
 
     @Override
     public List<Student> getStudents(User actor, String classroom) {
         return studentRepository.findAll().stream()
+                .filter(student -> !isDeleted(student))
                 .filter(student -> canReadStudent(actor, student))
                 .filter(student -> !StringUtils.hasText(classroom) || classroom.equals(student.getClassroom()))
                 .toList();
@@ -78,6 +82,7 @@ public class PreschoolServiceImpl implements PreschoolService {
     public List<ParentSummary> getParents(User actor) {
         requireAdmin(actor);
         Map<String, List<Student>> familyMap = studentRepository.findAll().stream()
+                .filter(student -> !isDeleted(student))
                 .filter(student -> StringUtils.hasText(student.getParent()))
                 .collect(Collectors.groupingBy(Student::getParent, LinkedHashMap::new, Collectors.toList()));
         return familyMap.entrySet().stream()
@@ -96,18 +101,49 @@ public class PreschoolServiceImpl implements PreschoolService {
 
     @Override
     public Student createStudent(User actor, Student student) {
-        requireAdmin(actor);
+        if (actor == null || actor.getRole() == null) {
+            throw forbidden();
+        }
+        if (actor.getRole() == RoleType.PARENT || actor.getRole() == RoleType.CUSTOMER) {
+            student.setParentUserId(actor.getUserId());
+            student.setParentEmail(actor.getUsername());
+            student.setParent(actor.getDisplayName());
+            student.setClassroom(null);
+        } else {
+            requireAdmin(actor);
+            if (StringUtils.hasText(student.getParentUserId())) {
+                User parent = userRepository.findByUserId(student.getParentUserId())
+                        .filter(user -> user.getRole() == RoleType.PARENT || user.getRole() == RoleType.CUSTOMER)
+                        .filter(user -> !isDeleted(user))
+                        .orElseThrow(() -> notFound("Parent account not found"));
+                student.setParentUserId(parent.getUserId());
+                student.setParentEmail(parent.getUsername());
+                student.setParent(parent.getDisplayName() == null ? parent.getUsername() : parent.getDisplayName());
+            }
+        }
         student.setId(StringUtil.generateId());
-        student.setStatus(PENDING);
+        student.setStatus(EntityStatus.ACTIVE.name());
         prepareCreate(student);
         return studentRepository.save(student);
     }
 
     @Override
     public Student updateStudent(User actor, String id, Student student) {
-        requireAdmin(actor);
+        if (actor == null || actor.getRole() == null) {
+            throw forbidden();
+        }
         Student existing = findStudent(id);
+        requireCanManageClassroom(actor, existing.getClassroom());
+        if (StringUtils.hasText(student.getClassroom())) {
+            requireCanManageClassroom(actor, student.getClassroom());
+        }
         student.setId(existing.getId());
+        if (!StringUtils.hasText(student.getParentEmail())) {
+            student.setParentEmail(existing.getParentEmail());
+        }
+        if (!StringUtils.hasText(student.getParentUserId())) {
+            student.setParentUserId(existing.getParentUserId());
+        }
         preserveMetadata(student, existing);
         return studentRepository.save(student);
     }
@@ -115,13 +151,18 @@ public class PreschoolServiceImpl implements PreschoolService {
     @Override
     public void deleteStudent(User actor, String id) {
         requireAdmin(actor);
-        studentRepository.delete(findStudent(id));
+        Student student = findStudent(id);
+        student.setStatus(EntityStatus.DELETED.name());
+        prepareUpdate(student);
+        studentRepository.save(student);
     }
 
     @Override
     public List<Teacher> getTeachers(User actor) {
         requireAdmin(actor);
-        return teacherRepository.findAll();
+        return teacherRepository.findAll().stream()
+                .filter(teacher -> !isDeleted(teacher))
+                .toList();
     }
 
     @Override
@@ -135,8 +176,7 @@ public class PreschoolServiceImpl implements PreschoolService {
     @Override
     public Teacher updateTeacher(User actor, String id, Teacher teacher) {
         requireAdmin(actor);
-        Teacher existing = teacherRepository.findById(id)
-                .orElseThrow(() -> notFound("Teacher not found"));
+        Teacher existing = findTeacher(id);
         teacher.setId(existing.getId());
         preserveMetadata(teacher, existing);
         return teacherRepository.save(teacher);
@@ -145,9 +185,10 @@ public class PreschoolServiceImpl implements PreschoolService {
     @Override
     public void deleteTeacher(User actor, String id) {
         requireAdmin(actor);
-        Teacher teacher = teacherRepository.findById(id)
-                .orElseThrow(() -> notFound("Teacher not found"));
-        teacherRepository.delete(teacher);
+        Teacher teacher = findTeacher(id);
+        teacher.setStatus(EntityStatus.DELETED.name());
+        prepareUpdate(teacher);
+        teacherRepository.save(teacher);
     }
 
     @Override
@@ -224,6 +265,7 @@ public class PreschoolServiceImpl implements PreschoolService {
         requireRole(actor, RoleType.ADMIN, RoleType.SUPER_ADMIN, RoleType.TEACHER);
         String scope = classroomScope(actor, classroom);
         List<Student> students = studentRepository.findAll().stream()
+                .filter(student -> !isDeleted(student))
                 .filter(student -> !StringUtils.hasText(scope) || scope.equals(student.getClassroom()))
                 .toList();
         if (students.isEmpty()) {
@@ -276,9 +318,6 @@ public class PreschoolServiceImpl implements PreschoolService {
             record.setClassroom(student.getClassroom());
             record.setStatus(item.status());
             record.setCheckInTime(item.checkInTime());
-            student.setStatus(item.status());
-            prepareUpdate(student);
-            studentRepository.save(student);
             result.add(attendanceRepository.save(record));
         }
         return result;
@@ -390,8 +429,15 @@ public class PreschoolServiceImpl implements PreschoolService {
     @Override
     public DashboardSummary getDashboardSummary(User actor, LocalDate date, String month) {
         requireAdmin(actor);
-        List<Student> students = studentRepository.findAll();
-        List<AttendanceRecord> attendance = attendanceRepository.findByDate(date);
+        List<Student> students = studentRepository.findAll().stream()
+                .filter(student -> !isDeleted(student))
+                .toList();
+        Set<String> activeStudentIds = students.stream()
+                .map(Student::getId)
+                .collect(Collectors.toSet());
+        List<AttendanceRecord> attendance = attendanceRepository.findByDate(date).stream()
+                .filter(record -> activeStudentIds.contains(record.getStudentId()))
+                .toList();
         long present = attendance.stream().filter(record -> PRESENT.equals(record.getStatus())).count();
         if (attendance.isEmpty()) {
             present = students.stream().filter(student -> PRESENT.equals(student.getStatus())).count();
@@ -422,7 +468,23 @@ public class PreschoolServiceImpl implements PreschoolService {
     }
 
     private Student findStudent(String id) {
-        return studentRepository.findById(id).orElseThrow(() -> notFound("Student not found"));
+        Student student = studentRepository.findById(id).orElseThrow(() -> notFound("Student not found"));
+        if (isDeleted(student)) {
+            throw notFound("Student not found");
+        }
+        return student;
+    }
+
+    private Teacher findTeacher(String id) {
+        Teacher teacher = teacherRepository.findById(id).orElseThrow(() -> notFound("Teacher not found"));
+        if (isDeleted(teacher)) {
+            throw notFound("Teacher not found");
+        }
+        return teacher;
+    }
+
+    private boolean isDeleted(BaseEntity entity) {
+        return EntityStatus.DELETED.name().equalsIgnoreCase(entity.getStatus());
     }
 
     private boolean canReadStudent(User actor, Student student) {
@@ -437,6 +499,7 @@ public class PreschoolServiceImpl implements PreschoolService {
 
     private Set<String> linkedStudentIds(User actor) {
         Set<String> ids = studentRepository.findAll().stream()
+                .filter(student -> !isDeleted(student))
                 .filter(student -> (StringUtils.hasText(actor.getUserId())
                         && actor.getUserId().equals(student.getParentUserId()))
                         || (StringUtils.hasText(actor.getUsername())
