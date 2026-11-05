@@ -1,6 +1,14 @@
-FROM eclipse-temurin:17-jre
+# Base image Alpine
+FROM khipu/openjdk17-alpine
 
-WORKDIR /app
-COPY target/preschool-api-0.0.1-SNAPSHOT.jar app.jar
+# Set working dir
+WORKDIR /auth-api
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Cài ffmpeg trên Alpine
+RUN apk add --no-cache ffmpeg
+
+# Copy jar
+COPY target/preschool-api-0.0.1-SNAPSHOT.jar target.jar
+
+# Run
+CMD ["java", "-jar", "target.jar"]
