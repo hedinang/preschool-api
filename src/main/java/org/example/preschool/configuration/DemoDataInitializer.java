@@ -125,13 +125,13 @@ public class DemoDataInitializer implements ApplicationRunner {
 
         String timestamp = LocalDateTime.now().toString();
         seedClassrooms(timestamp);
-        Map<String, Student> students = seedStudents(timestamp);
+//        Map<String, Student> students = seedStudents(timestamp);
         seedTeachers(timestamp);
-        Map<String, User> users = seedUsers(timestamp, students);
-        linkParentToStudent(students.get("Nguyễn Minh Khôi"), users.get("ngocanh@annhien.vn"));
+//        Map<String, User> users = seedUsers(timestamp, students);
+//        linkParentToStudent(students.get("Nguyễn Minh Khôi"), users.get("ngocanh@annhien.vn"));
         seedSchedule(timestamp);
-        seedAttendance(timestamp, students);
-        seedTuition(timestamp, students);
+//        seedAttendance(timestamp, students);
+//        seedTuition(timestamp, students);
         seedMessages(timestamp);
     }
 
